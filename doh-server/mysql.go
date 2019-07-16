@@ -2,7 +2,9 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"log"
 )
 
 func (s *Server) TokenNameValidation(token string, name string) bool {
@@ -13,20 +15,16 @@ func (s *Server) TokenNameValidation(token string, name string) bool {
 		panic(err.Error()) // Just for example purpose. You should use proper error handling instead of panic
 	}
 
-	// Prepare statement for TOKEN validation
-	tokenvalidationquery, err := db.Prepare("SELECT * FROM `core_tokens` where `token` = ?")
-	if err != nil {
-		panic(err.Error()) // proper error handling instead of panic in your app
-	}
-	defer tokenvalidationquery.Close()
+	var tokenvalidationcount int
 
-	// Check if the token exist in the database if not quit and don't return a message
-	// Execute the query
-	tokenvalidationcount := 0
-	tokenvalidationquery.QueryRow(token).Scan(&tokenvalidationcount)
-
-	if tokenvalidationcount == 0 {
-		return false
+	tokenvalidationquery := db.QueryRow("SELECT COUNT(*) FROM `core_tokens` where `token` = token").Scan(&tokenvalidationcount)
+	switch {
+	case tokenvalidationquery != nil:
+		log.Fatal(err)
+	default:
+		if tokenvalidationcount == 0 {
+			return false
+		}
 	}
 
 	// after token validation insert request into Database for tracking
