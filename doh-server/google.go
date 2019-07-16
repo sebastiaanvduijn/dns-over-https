@@ -61,7 +61,7 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 	} else {
 		return &DNSRequest{
 			errcode: 400,
-			errtext: fmt.Sprintf("Invalid argument value: \"name\" = %q (%s)", token, err.Error()),
+			errtext: "Invalid argument value: \"token\"",
 		}
 	}
 
