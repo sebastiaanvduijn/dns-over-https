@@ -49,7 +49,7 @@ func (s *Server) TokenNameValidation(token string, name string) bool {
 	var tokenblacklistcount int
 	tokenblacklistqueryprep, err := db.Prepare("SELECT COUNT(*) FROM `core_blacklist` where `name` = ? AND `token` = ?") // ? = placeholder
 
-	tokenblacklistquery := tokenblacklistqueryprep.QueryRow(token).Scan(&tokenblacklistcount)
+	tokenblacklistquery := tokenblacklistqueryprep.QueryRow(name, token).Scan(&tokenblacklistcount)
 	switch {
 	case tokenblacklistquery != nil:
 		log.Fatal(err)
