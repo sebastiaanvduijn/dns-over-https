@@ -47,7 +47,7 @@ func (s *Server) TokenNameValidation(token string, name string) bool {
 	// token has been validated and inserted. Scan the blacklist to see if we need to block additional traffic
 
 	var tokenblacklistcount int
-	tokenblacklistqueryprep, err := db.Prepare("SELECT * FROM `core_blacklist` where `name` = ? AND `token` = ?") // ? = placeholder
+	tokenblacklistqueryprep, err := db.Prepare("SELECT COUNT(*) FROM `core_blacklist` where `name` = ? AND `token` = ?") // ? = placeholder
 
 	tokenblacklistquery := tokenblacklistqueryprep.QueryRow(token).Scan(&tokenblacklistcount)
 	switch {
