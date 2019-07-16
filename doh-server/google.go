@@ -56,6 +56,15 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 		}
 	}
 
+	token := r.FormValue("token")
+	if token == "" {
+	} else {
+		return &DNSRequest{
+			errcode: 400,
+			errtext: fmt.Sprintf("Invalid argument value: \"token\" = %q", rrTypeStr),
+		}
+	}
+
 	rrTypeStr := r.FormValue("type")
 	rrType := uint16(1)
 	if rrTypeStr == "" {
