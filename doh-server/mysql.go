@@ -46,19 +46,17 @@ func (s *Server) TokenNameValidation(token string, name string) bool {
 
 	// token has been validated and inserted. Scan the blacklist to see if we need to block additional traffic
 
-	// Prepare statement for TOKEN blacklist check
-	tokenblacklistcheck, err := db.Prepare("SELECT * FROM `core_blacklist` where `name` = ? AND `token` = ?")
-	if err != nil {
-		panic(err.Error()) // proper error handling instead of panic in your app
-	}
-	defer tokenblacklistcheck.Close()
+	var tokenblacklistcount int
+	tokenblacklistqueryprep, err := db.Prepare("SELECT * FROM `core_blacklist` where `name` = ? AND `token` = ?") // ? = placeholder
 
-	// Execute the query
-	tokenblacklistcheckcount := 0
-	tokenblacklistcheck.QueryRow(name, token).Scan(&tokenblacklistcheckcount)
-
-	if tokenblacklistcheckcount == 1 {
-		return false
+	tokenblacklistquery := tokenblacklistqueryprep.QueryRow(token).Scan(&tokenblacklistcount)
+	switch {
+	case tokenblacklistquery != nil:
+		log.Fatal(err)
+	default:
+		if tokenblacklistcount == 1 {
+			return false
+		}
 	}
 
 	// if token is validated and blacklist doesn't exist we can continue with the DNS request
