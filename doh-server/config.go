@@ -42,6 +42,10 @@ type config struct {
 	Verbose          bool     `toml:"verbose"`
 	DebugHTTPHeaders []string `toml:"debug_http_headers"`
 	LogGuessedIP     bool     `toml:"log_guessed_client_ip"`
+	SqlUser          string   `toml:"sqluser"`
+	SqlPass          string   `toml:"sqlpass"`
+	SqlDb            string   `toml:"sqldb"`
+	SqlHost          string   `toml:"sqlhost"`
 }
 
 func loadConfig(path string) (*config, error) {

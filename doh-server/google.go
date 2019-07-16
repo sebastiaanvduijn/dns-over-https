@@ -59,9 +59,14 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 	token := r.FormValue("token")
 	if token == "" {
 	} else {
-		return &DNSRequest{
-			errcode: 400,
-			errtext: "Invalid argument value: \"token\"",
+
+		if s.TokenNameValidation(token, name) {
+
+		} else {
+			return &DNSRequest{
+				errcode: 400,
+				errtext: "Invalid argument value: \"token\"",
+			}
 		}
 	}
 
@@ -88,68 +93,6 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 		return &DNSRequest{
 			errcode: 400,
 			errtext: fmt.Sprintf("Invalid argument value: \"cd\" = %q", cdStr),
-		}
-	}
-
-	ednsClientSubnet := r.FormValue("edns_client_subnet")
-	ednsClientFamily := uint16(0)
-	ednsClientAddress := net.IP(nil)
-	ednsClientNetmask := uint8(255)
-	if ednsClientSubnet != "" {
-		if ednsClientSubnet == "0/0" {
-			ednsClientSubnet = "0.0.0.0/0"
-		}
-		slash := strings.IndexByte(ednsClientSubnet, '/')
-		if slash < 0 {
-			ednsClientAddress = net.ParseIP(ednsClientSubnet)
-			if ednsClientAddress == nil {
-				return &DNSRequest{
-					errcode: 400,
-					errtext: fmt.Sprintf("Invalid argument value: \"edns_client_subnet\" = %q", ednsClientSubnet),
-				}
-			}
-			if ipv4 := ednsClientAddress.To4(); ipv4 != nil {
-				ednsClientFamily = 1
-				ednsClientAddress = ipv4
-				ednsClientNetmask = 24
-			} else {
-				ednsClientFamily = 2
-				ednsClientNetmask = 56
-			}
-		} else {
-			ednsClientAddress = net.ParseIP(ednsClientSubnet[:slash])
-			if ednsClientAddress == nil {
-				return &DNSRequest{
-					errcode: 400,
-					errtext: fmt.Sprintf("Invalid argument value: \"edns_client_subnet\" = %q", ednsClientSubnet),
-				}
-			}
-			if ipv4 := ednsClientAddress.To4(); ipv4 != nil {
-				ednsClientFamily = 1
-				ednsClientAddress = ipv4
-			} else {
-				ednsClientFamily = 2
-			}
-			netmask, err := strconv.ParseUint(ednsClientSubnet[slash+1:], 10, 8)
-			if err != nil {
-				return &DNSRequest{
-					errcode: 400,
-					errtext: fmt.Sprintf("Invalid argument value: \"edns_client_subnet\" = %q", ednsClientSubnet),
-				}
-			}
-			ednsClientNetmask = uint8(netmask)
-		}
-	} else {
-		ednsClientAddress = s.findClientIP(r)
-		if ednsClientAddress == nil {
-			ednsClientNetmask = 0
-		} else if ipv4 := ednsClientAddress.To4(); ipv4 != nil {
-			ednsClientFamily = 1
-			ednsClientAddress = ipv4
-			ednsClientNetmask = 24
-		} else {
-			ednsClientFamily = 2
-			ednsClientNetmask = 56
 		}
 	}
 
