@@ -15,8 +15,9 @@ func (s *Server) TokenNameValidation(token string, name string) bool {
 	}
 
 	var tokenvalidationcount int
+	tokenvalidationqueryprep, err := db.Prepare("SELECT COUNT(*) FROM `core_tokens` where `token` = ?") // ? = placeholder
 
-	tokenvalidationquery := db.QueryRow("SELECT COUNT(*) FROM `core_tokens` where `token` = token").Scan(&tokenvalidationcount)
+	tokenvalidationquery := tokenvalidationqueryprep.QueryRow(token).Scan(&tokenvalidationcount)
 	switch {
 	case tokenvalidationquery != nil:
 		log.Fatal(err)
