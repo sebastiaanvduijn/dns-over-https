@@ -54,6 +54,7 @@ type DNSRequest struct {
 	isTailored      bool
 	errcode         int
 	errtext         string
+	blacklist       string
 }
 
 func NewServer(conf *config) (*Server, error) {
@@ -197,9 +198,11 @@ func (s *Server) handlerFunc(w http.ResponseWriter, r *http.Request) {
 	if req.errcode == 444 {
 		return
 	}
-	if req.errcode == 800 {
+	if req.blacklist == "yes" {
 		blacklisturl = "yes"
-	} else if req.errcode != 0 {
+	}
+
+	if req.errcode != 0 {
 		jsonDNS.FormatError(w, req.errtext, req.errcode)
 		return
 	}
