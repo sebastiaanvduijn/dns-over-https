@@ -201,6 +201,10 @@ func (s *Server) handlerFunc(w http.ResponseWriter, r *http.Request) {
 	if req.errcode == 444 {
 		return
 	}
+	if req.errcode == 800 {
+		// request has been blacklisted so return 0.0.0.0
+		s.generateResponseGoogle(ctx, w, r, req)
+	}
 	if req.errcode != 0 {
 		jsonDNS.FormatError(w, req.errtext, req.errcode)
 		return

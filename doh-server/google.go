@@ -70,8 +70,8 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 			}
 		} else if tokenanswer == "blackhole" {
 			return &DNSRequest{
-				errcode: 400,
-				errtext: "Request on blacklist BLOCK! \"token\"",
+				errcode: 800,
+				errtext: "SEND TO BLACKLIST: \"token\"",
 			}
 		}
 	}
@@ -102,68 +102,6 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 		}
 	}
 
-	ednsClientSubnet := r.FormValue("edns_client_subnet")
-	ednsClientFamily := uint16(0)
-	ednsClientAddress := net.IP(nil)
-	ednsClientNetmask := uint8(255)
-	if ednsClientSubnet != "" {
-		if ednsClientSubnet == "0/0" {
-			ednsClientSubnet = "0.0.0.0/0"
-		}
-		slash := strings.IndexByte(ednsClientSubnet, '/')
-		if slash < 0 {
-			ednsClientAddress = net.ParseIP(ednsClientSubnet)
-			if ednsClientAddress == nil {
-				return &DNSRequest{
-					errcode: 400,
-					errtext: fmt.Sprintf("Invalid argument value: \"edns_client_subnet\" = %q", ednsClientSubnet),
-				}
-			}
-			if ipv4 := ednsClientAddress.To4(); ipv4 != nil {
-				ednsClientFamily = 1
-				ednsClientAddress = ipv4
-				ednsClientNetmask = 24
-			} else {
-				ednsClientFamily = 2
-				ednsClientNetmask = 56
-			}
-		} else {
-			ednsClientAddress = net.ParseIP(ednsClientSubnet[:slash])
-			if ednsClientAddress == nil {
-				return &DNSRequest{
-					errcode: 400,
-					errtext: fmt.Sprintf("Invalid argument value: \"edns_client_subnet\" = %q", ednsClientSubnet),
-				}
-			}
-			if ipv4 := ednsClientAddress.To4(); ipv4 != nil {
-				ednsClientFamily = 1
-				ednsClientAddress = ipv4
-			} else {
-				ednsClientFamily = 2
-			}
-			netmask, err := strconv.ParseUint(ednsClientSubnet[slash+1:], 10, 8)
-			if err != nil {
-				return &DNSRequest{
-					errcode: 400,
-					errtext: fmt.Sprintf("Invalid argument value: \"edns_client_subnet\" = %q", ednsClientSubnet),
-				}
-			}
-			ednsClientNetmask = uint8(netmask)
-		}
-	} else {
-		ednsClientAddress = s.findClientIP(r)
-		if ednsClientAddress == nil {
-			ednsClientNetmask = 0
-		} else if ipv4 := ednsClientAddress.To4(); ipv4 != nil {
-			ednsClientFamily = 1
-			ednsClientAddress = ipv4
-			ednsClientNetmask = 24
-		} else {
-			ednsClientFamily = 2
-			ednsClientNetmask = 56
-		}
-	}
-
 	msg := new(dns.Msg)
 	msg.SetQuestion(dns.Fqdn(name), rrType)
 	msg.CheckingDisabled = cd
@@ -172,15 +110,6 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 	opt.Hdr.Rrtype = dns.TypeOPT
 	opt.SetUDPSize(dns.DefaultMsgSize)
 	opt.SetDo(true)
-	if ednsClientAddress != nil {
-		edns0Subnet := new(dns.EDNS0_SUBNET)
-		edns0Subnet.Code = dns.EDNS0SUBNET
-		edns0Subnet.Family = ednsClientFamily
-		edns0Subnet.SourceNetmask = ednsClientNetmask
-		edns0Subnet.SourceScope = 0
-		edns0Subnet.Address = ednsClientAddress
-		opt.Option = append(opt.Option, edns0Subnet)
-	}
 	msg.Extra = append(msg.Extra, opt)
 
 	return &DNSRequest{
