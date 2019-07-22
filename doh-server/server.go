@@ -199,8 +199,7 @@ func (s *Server) handlerFunc(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.errcode == 800 {
 		blacklisturl = "yes"
-	}
-	if req.errcode != 0 {
+	} else if req.errcode != 0 {
 		jsonDNS.FormatError(w, req.errtext, req.errcode)
 		return
 	}
