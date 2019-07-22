@@ -70,6 +70,7 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 			}
 		} else if tokenanswer == "blackhole" {
 			return &DNSRequest{
+				errcode:   0,
 				blacklist: "yes",
 			}
 		}
