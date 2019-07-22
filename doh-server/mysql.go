@@ -46,15 +46,30 @@ func (s *Server) TokenNameValidation(token string, name string) bool {
 
 	// token has been validated and inserted. Scan the blacklist to see if we need to block additional traffic
 
-	var tokenblacklistcount int
-	tokenblacklistqueryprep, err := db.Prepare("SELECT COUNT(*) FROM `core_blacklist` where `name` = ? AND `token` = ?") // ? = placeholder
+	var tokenblacklistusercount int
+	tokenblacklistuserqueryprep, err := db.Prepare("SELECT COUNT(*) FROM `core_blacklist_users` where `name` = ? AND `token` = ?") // ? = placeholder
 
-	tokenblacklistquery := tokenblacklistqueryprep.QueryRow(name, token).Scan(&tokenblacklistcount)
+	tokenblacklistuserquery := tokenblacklistuserqueryprep.QueryRow(name, token).Scan(&tokenblacklistusercount)
 	switch {
-	case tokenblacklistquery != nil:
+	case tokenblacklistuserquery != nil:
 		log.Fatal(err)
 	default:
-		if tokenblacklistcount == 1 {
+		if tokenblacklistusercount == 1 {
+			return false
+		}
+	}
+
+	// check global blacklist enabled for user
+
+	var tokenblacklistglobalcount int
+	tokenblacklistglobalqueryprep, err := db.Prepare("SELECT COUNT(*) FROM core_tokens INNER JOIN token_blacklist_membership ON core_tokens.id = token_blacklist_membership.tokenid INNER JOIN core_blacklist_global ON token_blacklist_membership.blacklist = core_blacklist_global.blacklist_id WHERE core_tokens.token = ? AND core_blacklist_global.url = ?") // ? = placeholder
+
+	tokenblacklistglobalquery := tokenblacklistglobalqueryprep.QueryRow(token, name).Scan(&tokenblacklistglobalcount)
+	switch {
+	case tokenblacklistglobalquery != nil:
+		log.Fatal(err)
+	default:
+		if tokenblacklistglobalcount == 1 {
 			return false
 		}
 	}
