@@ -126,7 +126,7 @@ func (s *Server) Start() error {
 
 func (s *Server) handlerFunc(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-
+	blacklisturl := "no"
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS, POST")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -190,10 +190,6 @@ func (s *Server) handlerFunc(w http.ResponseWriter, r *http.Request) {
 	var req *DNSRequest
 	if contentType == "application/dns-json" {
 		req = s.parseRequestGoogle(ctx, w, r)
-	} else if contentType == "application/dns-message" {
-		req = s.parseRequestIETF(ctx, w, r)
-	} else if contentType == "application/dns-udpwireformat" {
-		req = s.parseRequestIETF(ctx, w, r)
 	} else {
 		jsonDNS.FormatError(w, fmt.Sprintf("Invalid argument value: \"ct\" = %q", contentType), 415)
 		return
@@ -202,8 +198,7 @@ func (s *Server) handlerFunc(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.errcode == 800 {
-		// request has been blacklisted so return 0.0.0.0
-		s.generateResponseGoogle(ctx, w, r, req)
+		blacklisturl = yes
 	}
 	if req.errcode != 0 {
 		jsonDNS.FormatError(w, req.errtext, req.errcode)
@@ -217,6 +212,11 @@ func (s *Server) handlerFunc(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		jsonDNS.FormatError(w, fmt.Sprintf("DNS query failure (%s)", err.Error()), 503)
 		return
+	}
+
+	if blacklisturl == "yes" {
+		// request has been blacklisted so return 0.0.0.0
+		s.generateResponseGoogle(ctx, w, r, req)
 	}
 
 	if responseType == "application/json" {
