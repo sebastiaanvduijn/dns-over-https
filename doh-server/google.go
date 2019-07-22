@@ -57,7 +57,6 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 	}
 
 	token := r.FormValue("token")
-	blacklist := "no"
 	if token == "" {
 	} else {
 

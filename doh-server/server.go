@@ -126,7 +126,6 @@ func (s *Server) Start() error {
 
 func (s *Server) handlerFunc(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	blacklisturl := "no"
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS, POST")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
