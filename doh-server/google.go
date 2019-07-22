@@ -168,7 +168,6 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 	msg := new(dns.Msg)
 	msg.SetQuestion(dns.Fqdn(name), rrType)
 	msg.CheckingDisabled = cd
-	msg.blacklist = blacklist
 	opt := new(dns.OPT)
 	opt.Hdr.Name = "."
 	opt.Hdr.Rrtype = dns.TypeOPT
