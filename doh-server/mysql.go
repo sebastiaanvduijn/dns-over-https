@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-func (s *Server) TokenNameValidation(token string, name string) bool {
+func (s *Server) TokenNameValidation(token string, name string) string {
 
 	db, err := sql.Open("mysql", "api_user:password@/production")
 
@@ -23,26 +23,20 @@ func (s *Server) TokenNameValidation(token string, name string) bool {
 		log.Fatal(err)
 	default:
 		if tokenvalidationcount == 0 {
-			return false
+			return "invalid_token"
 		}
 	}
+
+	// if token is validated and blacklist doesn't exist we can continue with the DNS request. Before exit register request in database
 
 	// after token validation insert request into Database for tracking
 
 	// Prepare statement for inserting data
-	stmtIns, err := db.Prepare("INSERT INTO `token_requests` ( `token`, `name`) VALUES( ?, ? )") // ? = placeholder
+	stmtIns, err := db.Prepare("INSERT INTO `token_requests` ( `token`, `name`, `action`) VALUES( ?, ?, ? )") // ? = placeholder
 	if err != nil {
 		panic(err.Error()) // proper error handling instead of panic in your app
 	}
 	defer stmtIns.Close() // Close the statement when we leave main() / the program terminates
-
-	// execute the query
-
-	_, err = stmtIns.Exec(token, name) // Insert tuples (i, i^2)
-	if err != nil {
-		panic(err.Error()) // proper error handling instead of panic in your app
-	}
-	defer db.Close()
 
 	// token has been validated and inserted. Scan the blacklist to see if we need to block additional traffic
 
@@ -55,7 +49,14 @@ func (s *Server) TokenNameValidation(token string, name string) bool {
 		log.Fatal(err)
 	default:
 		if tokenblacklistusercount == 1 {
-			return false
+
+			_, err = stmtIns.Exec(token, name, "block")
+			if err != nil {
+				panic(err.Error()) // proper error handling instead of panic in your app
+			}
+			defer db.Close()
+
+			return "blackhole"
 		}
 	}
 
@@ -70,12 +71,25 @@ func (s *Server) TokenNameValidation(token string, name string) bool {
 		log.Fatal(err)
 	default:
 		if tokenblacklistglobalcount == 1 {
-			return false
+
+			_, err = stmtIns.Exec(token, name, "block")
+			if err != nil {
+				panic(err.Error()) // proper error handling instead of panic in your app
+			}
+			defer db.Close()
+
+			return "blackhole"
 		}
 	}
 
-	// if token is validated and blacklist doesn't exist we can continue with the DNS request
+	// execute the query with accept for the stats
 
-	return true
+	_, err = stmtIns.Exec(token, name, "accept")
+	if err != nil {
+		panic(err.Error()) // proper error handling instead of panic in your app
+	}
+	defer db.Close()
+
+	return "true"
 
 }

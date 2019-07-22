@@ -60,12 +60,18 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 	if token == "" {
 	} else {
 
-		if s.TokenNameValidation(token, name) {
+		tokenanswer := s.TokenNameValidation(token, name)
 
-		} else {
+		if tokenanswer == "true" {
+		} else if tokenanswer == "invalid_token" {
 			return &DNSRequest{
 				errcode: 400,
 				errtext: "Invalid argument value: \"token\"",
+			}
+		} else if tokenanswer == "blackhole" {
+			return &DNSRequest{
+				errcode: 400,
+				errtext: "Request on blacklist BLOCK! \"token\"",
 			}
 		}
 	}
