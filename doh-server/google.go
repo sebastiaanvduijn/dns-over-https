@@ -57,6 +57,7 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 	}
 
 	token := r.FormValue("token")
+	blacklist := "no"
 	if token == "" {
 	} else {
 
@@ -70,8 +71,8 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 			}
 		} else if tokenanswer == "blackhole" {
 			return &DNSRequest{
-				errcode:   0,
-				blacklist: "yesy",
+				errcode: 800,
+				errtext: fmt.Sprintf("\"TC\":false,\r\n   \"RD\":true,\r\n   \"RA\":true,\r\n   \"AD\":false,\r\n   \"CD\":false,\r\n   \"Question\":[  \r\n      {  \r\n         \"name\":\"%q\",\r\n         \"type\":1\r\n      }\r\n   ],\r\n   \"Answer\":[  \r\n      {  \r\n         \"name\":\"%q\",\r\n         \"type\":1,\r\n         \"TTL\":299,\r\n         \"Expires\":\"Mon, 22 Jul 2019 19:59:28 UTC\",\r\n         \"data\":\"0.0.0.0\"\r\n      }\r\n   ]", name, name),
 			}
 		}
 	}
@@ -167,6 +168,7 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 	msg := new(dns.Msg)
 	msg.SetQuestion(dns.Fqdn(name), rrType)
 	msg.CheckingDisabled = cd
+	msg.blacklist = blacklist
 	opt := new(dns.OPT)
 	opt.Hdr.Name = "."
 	opt.Hdr.Rrtype = dns.TypeOPT

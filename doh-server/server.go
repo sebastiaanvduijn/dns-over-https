@@ -54,7 +54,6 @@ type DNSRequest struct {
 	isTailored      bool
 	errcode         int
 	errtext         string
-	blacklist       string
 }
 
 func NewServer(conf *config) (*Server, error) {
@@ -198,10 +197,6 @@ func (s *Server) handlerFunc(w http.ResponseWriter, r *http.Request) {
 	if req.errcode == 444 {
 		return
 	}
-	if req.blacklist == "yes" {
-		blacklisturl = "yes"
-	}
-
 	if req.errcode != 0 {
 		jsonDNS.FormatError(w, req.errtext, req.errcode)
 		return
@@ -216,15 +211,8 @@ func (s *Server) handlerFunc(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if blacklisturl == "yes" {
-		// request has been blacklisted so return 0.0.0.0
-		s.generateResponseGoogle(ctx, w, r, req)
-	}
-
 	if responseType == "application/json" {
 		s.generateResponseGoogle(ctx, w, r, req)
-	} else if responseType == "application/dns-message" {
-		s.generateResponseIETF(ctx, w, r, req)
 	} else {
 		panic("Unknown response Content-Type")
 	}
