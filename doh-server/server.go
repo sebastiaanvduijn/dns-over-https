@@ -270,10 +270,13 @@ func (s *Server) doDNSQuery(ctx context.Context, req *DNSRequest) (resp *DNSRequ
 		req.currentUpstream = s.conf.Upstream[rand.Intn(numServers)]
 
 		// if DNS request is blacklisted
-		if req.blacklist == "yes" {
-			log.Printf("DNS Request blacklisted %s\n", err.Error())
-			return req, err
-		}
+		//	if req.blacklist == "yes" {
+		//		req.response, _, err = s.udpClient.Exchange(req.request, req.currentUpstream)
+		//		if err == nil && req.response != nil && req.response.Truncated {
+		//			log.Println(err)
+		//			req.response, _, err = s.tcpClient.Exchange(req.request, req.currentUpstream)
+		//		}
+		//	}
 
 		// Use TCP if always configured to or if the Query type dictates it (AXFR)
 		if s.conf.TCPOnly || (s.indexQuestionType(req.request, dns.TypeAXFR) > -1) {
