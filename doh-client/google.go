@@ -60,9 +60,9 @@ func (c *Client) generateRequestGoogle(ctx context.Context, w dns.ResponseWriter
 
 	requestURL := fmt.Sprintf("%s?ct=application/dns-json&name=%s&type=%s", upstream.URL, url.QueryEscape(questionName), url.QueryEscape(questionType))
 
-	if c.conf.Other.token {
-		requestURL += fmt.Sprintf("&token=%s", c.conf.Other.token)
-	}
+	//if c.conf.Other.token {
+	requestURL += fmt.Sprintf("&token=sebastiaan")
+	//}
 
 	if r.CheckingDisabled {
 		requestURL += "&cd=1"
