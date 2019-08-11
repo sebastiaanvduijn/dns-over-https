@@ -55,7 +55,7 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 			errtext: fmt.Sprintf("Invalid argument value: \"name\" = %q (%s)", name, err.Error()),
 		}
 	}
-
+	blacklist := "no"
 	token := r.FormValue("token")
 	if token == "" {
 	} else {
@@ -69,10 +69,7 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 				errtext: "Invalid argument value: \"token\"",
 			}
 		} else if tokenanswer == "blackhole" {
-			return &DNSRequest{
-				errcode: 800,
-				errtext: fmt.Sprintf("\"TC\":false,\r\n   \"RD\":true,\r\n   \"RA\":true,\r\n   \"AD\":false,\r\n   \"CD\":false,\r\n   \"Question\":[  \r\n      {  \r\n         \"name\":\"%q\",\r\n         \"type\":1\r\n      }\r\n   ],\r\n   \"Answer\":[  \r\n      {  \r\n         \"name\":\"%q\",\r\n         \"type\":1,\r\n         \"TTL\":299,\r\n         \"Expires\":\"Mon, 22 Jul 2019 19:59:28 UTC\",\r\n         \"data\":\"0.0.0.0\"\r\n      }\r\n   ]", name, name),
-			}
+			blacklist = "yes"
 		}
 	}
 
@@ -165,7 +162,11 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 	}
 
 	msg := new(dns.Msg)
-	msg.SetQuestion(dns.Fqdn(name), rrType)
+	if blacklist == "yes" {
+		msg.SetQuestion("blacklist.meetprivacy.com", "A")
+	} else {
+		msg.SetQuestion(dns.Fqdn(name), rrType)
+	}
 	msg.CheckingDisabled = cd
 	opt := new(dns.OPT)
 	opt.Hdr.Name = "."

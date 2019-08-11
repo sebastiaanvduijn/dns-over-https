@@ -179,10 +179,6 @@ func (s *Server) handlerFunc(w http.ResponseWriter, r *http.Request) {
 		// Guess response Content-Type based on request Content-Type
 		if contentType == "application/dns-json" {
 			responseType = "application/json"
-		} else if contentType == "application/dns-message" {
-			responseType = "application/dns-message"
-		} else if contentType == "application/dns-udpwireformat" {
-			responseType = "application/dns-message"
 		}
 	}
 
