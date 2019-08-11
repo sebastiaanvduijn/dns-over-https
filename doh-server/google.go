@@ -163,7 +163,7 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 
 	msg := new(dns.Msg)
 	if blacklist == "yes" {
-		msg.SetQuestion("blacklist.meetprivacy.com", "A")
+		msg.SetQuestion("blacklist.meetprivacy.com", rrType)
 	} else {
 		msg.SetQuestion(dns.Fqdn(name), rrType)
 	}
