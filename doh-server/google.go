@@ -162,11 +162,7 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 	}
 
 	msg := new(dns.Msg)
-	if blacklist == "yes" {
-		msg.SetQuestion(dns.Fqdn("blacklist.meetprivacy.com"), rrType)
-	} else {
-		msg.SetQuestion(dns.Fqdn(name), rrType)
-	}
+	msg.SetQuestion(dns.Fqdn(name), rrType)
 	msg.CheckingDisabled = cd
 	opt := new(dns.OPT)
 	opt.Hdr.Name = "."
@@ -186,6 +182,7 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 
 	return &DNSRequest{
 		request:    msg,
+		blacklist:  blacklist,
 		isTailored: ednsClientSubnet == "",
 	}
 }

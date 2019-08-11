@@ -54,6 +54,7 @@ type DNSRequest struct {
 	isTailored      bool
 	errcode         int
 	errtext         string
+	blacklist       string
 }
 
 func NewServer(conf *config) (*Server, error) {
@@ -267,6 +268,12 @@ func (s *Server) doDNSQuery(ctx context.Context, req *DNSRequest) (resp *DNSRequ
 	numServers := len(s.conf.Upstream)
 	for i := uint(0); i < s.conf.Tries; i++ {
 		req.currentUpstream = s.conf.Upstream[rand.Intn(numServers)]
+
+		// if DNS request is blacklisted
+		if req.blacklist == "yes" {
+			log.Printf("DNS Request blacklisted %s\n", err.Error())
+			return req, err
+		}
 
 		// Use TCP if always configured to or if the Query type dictates it (AXFR)
 		if s.conf.TCPOnly || (s.indexQuestionType(req.request, dns.TypeAXFR) > -1) {
