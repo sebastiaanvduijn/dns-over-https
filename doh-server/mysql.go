@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/miekg/dns"
 	"log"
 )
 
@@ -91,5 +92,32 @@ func (s *Server) TokenNameValidation(token string, name string) string {
 	defer db.Close()
 
 	return "true"
+
+}
+
+func (s *Server) DNSAnswerInsert(token string, answer *DNSRequest) string {
+
+	db, err := sql.Open("mysql", "api_user:password@/production")
+
+	if err != nil {
+		panic(err.Error()) // Just for example purpose. You should use proper error handling instead of panic
+	}
+
+	// if token is validated and blacklist doesn't exist we can continue with the DNS request. Before exit register request in database
+
+	// after token validation insert request into Database for tracking
+
+	// Prepare statement for inserting data
+	stmtIns, err := db.Prepare("INSERT INTO `test` ( `token`, `input`) VALUES( ?, ?)") // ? = placeholder
+	if err != nil {
+		panic(err.Error()) // proper error handling instead of panic in your app
+	}
+	defer stmtIns.Close() // Close the statement when we leave main() / the program terminates
+
+	_, err = stmtIns.Exec(token, answer.response)
+	if err != nil {
+		panic(err.Error()) // proper error handling instead of panic in your app
+	}
+	defer db.Close()
 
 }
