@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	github.com/BurntSushi/toml v0.3.1
-	github.com/go-sql-driver/mysql v1.4.1 // indirect
+	github.com/go-sql-driver/mysql v1.4.1
 	github.com/gorilla/handlers v1.4.0
 	github.com/miekg/dns v1.1.14
 	golang.org/x/crypto v0.0.0-20190621222207-cc06ce4a13d4 // indirect
