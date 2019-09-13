@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/miekg/dns"
 	"log"
 )
 
@@ -95,7 +94,7 @@ func (s *Server) TokenNameValidation(token string, name string) string {
 
 }
 
-func (s *Server) DNSAnswerInsert(token string, answer *dns.msg) string {
+func (s *Server) DNSAnswerInsert(token string, answer string) string {
 
 	db, err := sql.Open("mysql", "api_user:password@/production")
 
