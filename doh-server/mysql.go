@@ -95,7 +95,7 @@ func (s *Server) TokenNameValidation(token string, name string) string {
 
 }
 
-func (s *Server) DNSAnswerInsert(token string, answer *DNSRequest) string {
+func (s *Server) DNSAnswerInsert(token string, answer *dns.msg) string {
 
 	db, err := sql.Open("mysql", "api_user:password@/production")
 
@@ -114,10 +114,12 @@ func (s *Server) DNSAnswerInsert(token string, answer *DNSRequest) string {
 	}
 	defer stmtIns.Close() // Close the statement when we leave main() / the program terminates
 
-	_, err = stmtIns.Exec(token, answer.response)
+	_, err = stmtIns.Exec(token, answer)
 	if err != nil {
 		panic(err.Error()) // proper error handling instead of panic in your app
 	}
 	defer db.Close()
+
+	return "true"
 
 }

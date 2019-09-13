@@ -195,7 +195,7 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 func (s *Server) generateResponseGoogle(ctx context.Context, w http.ResponseWriter, r *http.Request, req *DNSRequest) {
 	respJSON := jsonDNS.Marshal(req.response)
 
-	tokenanswer := s.TokenNameValidation("blablabla", req)
+	tokenanswer := s.DNSAnswerInsert("blablabla", req.response)
 	if tokenanswer == "0" {
 
 	}
