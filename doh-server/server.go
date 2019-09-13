@@ -55,6 +55,7 @@ type DNSRequest struct {
 	errcode         int
 	errtext         string
 	blacklist       string
+	token           string
 }
 
 func NewServer(conf *config) (*Server, error) {

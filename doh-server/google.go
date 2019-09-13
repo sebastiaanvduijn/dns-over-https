@@ -57,21 +57,6 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 	}
 	blacklist := "no"
 	token := r.FormValue("token")
-	if token == "" {
-	} else {
-
-		tokenanswer := s.TokenNameValidation(token, name)
-
-		if tokenanswer == "true" {
-		} else if tokenanswer == "invalid_token" {
-			return &DNSRequest{
-				errcode: 400,
-				errtext: "Invalid argument value: \"token\"",
-			}
-		} else if tokenanswer == "blackhole" {
-			blacklist = "yes"
-		}
-	}
 
 	rrTypeStr := r.FormValue("type")
 	rrType := uint16(1)
@@ -162,12 +147,7 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 	}
 
 	msg := new(dns.Msg)
-
-	if blacklist == "yes" {
-		msg.SetQuestion(dns.Fqdn("blacklist.meetprivacy.com"), rrType)
-	} else {
-		msg.SetQuestion(dns.Fqdn(name), rrType)
-	}
+	msg.SetQuestion(dns.Fqdn(name), rrType)
 	msg.CheckingDisabled = cd
 	opt := new(dns.OPT)
 	opt.Hdr.Name = "."
@@ -187,13 +167,14 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 
 	return &DNSRequest{
 		request:    msg,
+		token:      token,
 		blacklist:  blacklist,
 		isTailored: ednsClientSubnet == "",
 	}
 }
 
 func (s *Server) generateResponseGoogle(ctx context.Context, w http.ResponseWriter, r *http.Request, req *DNSRequest) {
-	respJSON := s.CreateDNSPart(req.response)
+	respJSON := s.CreateDNSPart(req.response, req.token)
 
 	respStr, err := json.Marshal(respJSON)
 	if err != nil {
