@@ -68,7 +68,8 @@ func (s *Server) CreateDNSPart(msg *dns.Msg, token string) *Response {
 	for _, question := range msg.Question {
 
 		// check per question if part of the blacklist
-		tokenanswer := s.TokenNameValidation(token, question.Name)
+		trimmedquestionname := strings.TrimSuffix(question.Name, ".")
+		tokenanswer := s.TokenNameValidation(token, trimmedquestionname)
 
 		if tokenanswer == "true" {
 		} else if tokenanswer == "blackhole" {
@@ -111,18 +112,6 @@ func (s *Server) CreateDNSPart(msg *dns.Msg, token string) *Response {
 		if header.Rrtype == dns.TypeOPT {
 			opt := rr.(*dns.OPT)
 			resp.Status = ((opt.Hdr.Ttl & 0xff000000) >> 20) | (resp.Status & 0xff)
-			for _, option := range opt.Option {
-				if option.Option() == dns.EDNS0SUBNET {
-					edns0 := option.(*dns.EDNS0_SUBNET)
-					clientAddress := edns0.Address
-					if clientAddress == nil {
-						clientAddress = net.IP{0, 0, 0, 0}
-					} else if ipv4 := clientAddress.To4(); ipv4 != nil {
-						clientAddress = ipv4
-					}
-					resp.EdnsClientSubnet = clientAddress.String() + "/" + strconv.FormatUint(uint64(edns0.SourceScope), 10)
-				}
-			}
 			continue
 		}
 		if !resp.HaveTTL || jsonAdditional.TTL < resp.LeastTTL {
