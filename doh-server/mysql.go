@@ -111,12 +111,13 @@ func (s *Server) DNSAnswerInsert(token string, answer string) string {
 	if err != nil {
 		panic(err.Error()) // proper error handling instead of panic in your app
 	}
-	defer stmtIns.Close() // Close the statement when we leave main() / the program terminates
 
 	_, err = stmtIns.Exec(token, answer)
 	if err != nil {
 		panic(err.Error()) // proper error handling instead of panic in your app
 	}
+
+	defer stmtIns.Close() // Close the statement when we leave main() / the program terminates
 	defer db.Close()
 
 	return "true"
