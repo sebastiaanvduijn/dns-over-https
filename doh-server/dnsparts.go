@@ -96,7 +96,7 @@ func (s *Server) CreateDNSPart(msg *dns.Msg, token string) *Response {
 
 	resp.Authority = make([]RR, 0, len(msg.Ns))
 	for _, rr := range msg.Ns {
-		jsonAuthority := s.marshalRR(rr, now, blacklist, "99")
+		jsonAuthority := s.marshalRR(rr, now, blacklist, 99)
 		if !resp.HaveTTL || jsonAuthority.TTL < resp.LeastTTL {
 			resp.HaveTTL = true
 			resp.LeastTTL = jsonAuthority.TTL
@@ -107,7 +107,7 @@ func (s *Server) CreateDNSPart(msg *dns.Msg, token string) *Response {
 
 	resp.Additional = make([]RR, 0, len(msg.Extra))
 	for _, rr := range msg.Extra {
-		jsonAdditional := s.marshalRR(rr, now, blacklist, "99")
+		jsonAdditional := s.marshalRR(rr, now, blacklist, 99)
 		header := rr.Header()
 		if header.Rrtype == dns.TypeOPT {
 			opt := rr.(*dns.OPT)
