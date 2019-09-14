@@ -7,7 +7,7 @@ import (
 	"log"
 )
 
-func (s *Server) CreateNewTokenRequestID(token string, name string, requesttype string) string {
+func (s *Server) CreateNewTokenRequestID(token string, name string, requesttype uint16) string {
 
 	// create unique random ID
 	uniqueID := uuid.NewV4().String()
@@ -113,7 +113,7 @@ func (s *Server) TokenBlackListCheck(token string, name string) string {
 
 }
 
-func (s *Server) DNSAnswerInsert(tokendnsrequestid string, answer string, count int) string {
+func (s *Server) DNSAnswerInsert(tokendnsrequestid string, answer string, count int, CustomDNSAnswer string) string {
 
 	db, err := sql.Open("mysql", "api_user:password@/production")
 
@@ -121,17 +121,26 @@ func (s *Server) DNSAnswerInsert(tokendnsrequestid string, answer string, count 
 		panic(err.Error()) // Just for example purpose. You should use proper error handling instead of panic
 	}
 
+	DNSAction := ""
+	if CustomDNSAnswer == "blacklist" {
+		DNSAction = "BLOCK"
+	} else if CustomDNSAnswer == "proxyrequest" {
+		DNSAction = "PROXIED"
+	} else {
+		DNSAction = "ALLOW"
+	}
+
 	// if token is validated and blacklist doesn't exist we can continue with the DNS request. Before exit register request in database
 
 	// after token validation insert request into Database for tracking
 
 	// Prepare statement for inserting data
-	stmtIns, err := db.Prepare("INSERT INTO `test` ( `token`, `input`, `count`) VALUES( ?, ?, ?)") // ? = placeholder
+	stmtIns, err := db.Prepare("insert into `token_answer` ( `answer`, `tokenrequestid`, `action`) values ( ?, ?, ?)") // ? = placeholder
 	if err != nil {
 		panic(err.Error()) // proper error handling instead of panic in your app
 	}
 
-	_, err = stmtIns.Exec(tokendnsrequestid, answer, count)
+	_, err = stmtIns.Exec(answer, tokendnsrequestid, DNSAction)
 	if err != nil {
 		panic(err.Error()) // proper error handling instead of panic in your app
 	}

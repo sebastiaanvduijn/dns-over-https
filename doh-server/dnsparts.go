@@ -88,7 +88,7 @@ func (s *Server) CreateDNSPart(msg *dns.Msg, token string, tokendnsrequestid str
 	answercount := len(msg.Answer)
 
 	for _, rr := range msg.Answer {
-		jsonAnswer := s.marshalRR(rr, now, CustomDNSAnswer, answercount, token)
+		jsonAnswer := s.marshalRR(rr, now, CustomDNSAnswer, answercount, token, tokendnsrequestid)
 		if !resp.HaveTTL || jsonAnswer.TTL < resp.LeastTTL {
 			resp.HaveTTL = true
 			resp.LeastTTL = jsonAnswer.TTL
@@ -99,7 +99,7 @@ func (s *Server) CreateDNSPart(msg *dns.Msg, token string, tokendnsrequestid str
 
 	resp.Authority = make([]RR, 0, len(msg.Ns))
 	for _, rr := range msg.Ns {
-		jsonAuthority := s.marshalRR(rr, now, CustomDNSAnswer, 99, token)
+		jsonAuthority := s.marshalRR(rr, now, CustomDNSAnswer, 99, token, tokendnsrequestid)
 		if !resp.HaveTTL || jsonAuthority.TTL < resp.LeastTTL {
 			resp.HaveTTL = true
 			resp.LeastTTL = jsonAuthority.TTL
@@ -110,7 +110,7 @@ func (s *Server) CreateDNSPart(msg *dns.Msg, token string, tokendnsrequestid str
 
 	resp.Additional = make([]RR, 0, len(msg.Extra))
 	for _, rr := range msg.Extra {
-		jsonAdditional := s.marshalRR(rr, now, CustomDNSAnswer, 99, token)
+		jsonAdditional := s.marshalRR(rr, now, CustomDNSAnswer, 99, token, tokendnsrequestid)
 		header := rr.Header()
 		if header.Rrtype == dns.TypeOPT {
 			opt := rr.(*dns.OPT)
@@ -128,7 +128,7 @@ func (s *Server) CreateDNSPart(msg *dns.Msg, token string, tokendnsrequestid str
 	return resp
 }
 
-func (s *Server) marshalRR(rr dns.RR, now time.Time, CustomDNSAnswer string, count int, token string) RR {
+func (s *Server) marshalRR(rr dns.RR, now time.Time, CustomDNSAnswer string, count int, token string, tokendnsrequestid string) RR {
 	jsonRR := RR{}
 	rrHeader := rr.Header()
 	jsonRR.Name = rrHeader.Name
@@ -151,7 +151,7 @@ func (s *Server) marshalRR(rr dns.RR, now time.Time, CustomDNSAnswer string, cou
 			}
 		}
 
-		s.DNSAnswerInsert("blabla", data[4], count)
+		s.DNSAnswerInsert(tokendnsrequestid, data[4], count, CustomDNSAnswer)
 	}
 	return jsonRR
 }

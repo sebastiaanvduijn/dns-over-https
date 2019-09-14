@@ -78,7 +78,7 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 	if token == "" {
 	} else {
 		// token is not empty so validate and register if stats are enabled
-		tokenvalidationrequest := s.CreateNewTokenRequestID(token, name, "na")
+		tokenvalidationrequest := s.CreateNewTokenRequestID(token, name, rrType)
 		if tokenvalidationrequest == "invalid_token" {
 			// token is invalid or stats are disabled
 		} else {
