@@ -2,11 +2,57 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/twinj/uuid"
 	"log"
 )
 
-func (s *Server) TokenNameValidation(token string, name string) string {
+func (s *Server) CreateNewTokenRequestID(token string, name string, requesttype string) string {
+
+	// create unique random ID
+	uniqueID := uuid.NewV4().String()
+
+	// open Database connection
+	db, err := sql.Open("mysql", "api_user:password@/production")
+
+	if err != nil {
+		panic(err.Error()) // Just for example purpose. You should use proper error handling instead of panic
+	}
+
+	// prepare insert query
+	stmtIns, err := db.Prepare("INSERT INTO `token_requests` ( `token`, `name`, `type`, `requestid`) VALUES( ?, ?, ?, ? )") // ? = placeholder
+	if err != nil {
+		panic(err.Error()) // proper error handling instead of panic in your app
+	}
+	defer stmtIns.Close() // Close the statement when we leave main() / the program terminates
+
+	var tokenvalidationcount int
+	// prepare query to check if token exist and if stats are enabled
+	tokenvalidationqueryprep, err := db.Prepare("select COUNT(*) from `core_tokens` where `token` = ? AND `enable_stats` = ? ")
+	tokenvalidationquery := tokenvalidationqueryprep.QueryRow(token, 1).Scan(&tokenvalidationcount)
+	switch {
+	case tokenvalidationquery != nil:
+		log.Fatal(err)
+	default:
+		if tokenvalidationcount == 1 {
+			// token is valid and stats are enabled, insert new entry and return request ID
+			_, err = stmtIns.Exec(token, name, requesttype, uniqueID)
+			if err != nil {
+				panic(err.Error()) // proper error handling instead of panic in your app
+			}
+			defer db.Close()
+
+			return uniqueID
+		}
+	}
+	defer stmtOut.Close()
+
+	return "invalid_token"
+
+}
+
+func (s *Server) TokenBlackListCheck(token string, name string) string {
 
 	db, err := sql.Open("mysql", "api_user:password@/production")
 
@@ -31,13 +77,6 @@ func (s *Server) TokenNameValidation(token string, name string) string {
 
 	// after token validation insert request into Database for tracking
 
-	// Prepare statement for inserting data
-	stmtIns, err := db.Prepare("INSERT INTO `token_requests` ( `token`, `name`, `action`) VALUES( ?, ?, ? )") // ? = placeholder
-	if err != nil {
-		panic(err.Error()) // proper error handling instead of panic in your app
-	}
-	defer stmtIns.Close() // Close the statement when we leave main() / the program terminates
-
 	// token has been validated and inserted. Scan the blacklist to see if we need to block additional traffic
 
 	var tokenblacklistusercount int
@@ -49,12 +88,6 @@ func (s *Server) TokenNameValidation(token string, name string) string {
 		log.Fatal(err)
 	default:
 		if tokenblacklistusercount == 1 {
-
-			_, err = stmtIns.Exec(token, name, "block")
-			if err != nil {
-				panic(err.Error()) // proper error handling instead of panic in your app
-			}
-			defer db.Close()
 
 			return "blackhole"
 		}
@@ -94,7 +127,7 @@ func (s *Server) TokenNameValidation(token string, name string) string {
 
 }
 
-func (s *Server) DNSAnswerInsert(token string, answer string, count int) string {
+func (s *Server) DNSAnswerInsert(tokendnsrequestid string, answer string, count int) string {
 
 	db, err := sql.Open("mysql", "api_user:password@/production")
 
@@ -112,7 +145,7 @@ func (s *Server) DNSAnswerInsert(token string, answer string, count int) string 
 		panic(err.Error()) // proper error handling instead of panic in your app
 	}
 
-	_, err = stmtIns.Exec(token, answer, count)
+	_, err = stmtIns.Exec(tokendnsrequestid, answer, count)
 	if err != nil {
 		panic(err.Error()) // proper error handling instead of panic in your app
 	}

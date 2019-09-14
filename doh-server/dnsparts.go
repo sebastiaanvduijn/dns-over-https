@@ -1,6 +1,7 @@
 package main
 
 import (
+	"regexp"
 	"strings"
 	"time"
 
@@ -51,9 +52,9 @@ type RR struct {
 	Data string `json:"data"`
 }
 
-func (s *Server) CreateDNSPart(msg *dns.Msg, token string) *Response {
+func (s *Server) CreateDNSPart(msg *dns.Msg, token string, tokendnsrequestid string) *Response {
 	now := time.Now().UTC()
-	blacklist := "no"
+	CustomDNSAnswer := "no"
 	resp := new(Response)
 	resp.Status = uint32(msg.Rcode)
 	resp.TC = msg.Truncated
@@ -67,11 +68,13 @@ func (s *Server) CreateDNSPart(msg *dns.Msg, token string) *Response {
 
 		// check per question if part of the blacklist
 		trimmedquestionname := strings.TrimSuffix(question.Name, ".")
-		tokenanswer := s.TokenNameValidation(token, trimmedquestionname)
+		tokenanswer := s.TokenBlackListCheck(token, trimmedquestionname)
 
 		if tokenanswer == "true" {
 		} else if tokenanswer == "blackhole" {
-			blacklist = "yes"
+			CustomDNSAnswer = "blacklist"
+		} else if tokenanswer == "proxyrequest" {
+			CustomDNSAnswer = "proxyrequest"
 		}
 
 		jsonQuestion := Question{
@@ -85,7 +88,7 @@ func (s *Server) CreateDNSPart(msg *dns.Msg, token string) *Response {
 	answercount := len(msg.Answer)
 
 	for _, rr := range msg.Answer {
-		jsonAnswer := s.marshalRR(rr, now, blacklist, answercount)
+		jsonAnswer := s.marshalRR(rr, now, CustomDNSAnswer, answercount, token)
 		if !resp.HaveTTL || jsonAnswer.TTL < resp.LeastTTL {
 			resp.HaveTTL = true
 			resp.LeastTTL = jsonAnswer.TTL
@@ -96,7 +99,7 @@ func (s *Server) CreateDNSPart(msg *dns.Msg, token string) *Response {
 
 	resp.Authority = make([]RR, 0, len(msg.Ns))
 	for _, rr := range msg.Ns {
-		jsonAuthority := s.marshalRR(rr, now, blacklist, 99)
+		jsonAuthority := s.marshalRR(rr, now, CustomDNSAnswer, 99, token)
 		if !resp.HaveTTL || jsonAuthority.TTL < resp.LeastTTL {
 			resp.HaveTTL = true
 			resp.LeastTTL = jsonAuthority.TTL
@@ -107,7 +110,7 @@ func (s *Server) CreateDNSPart(msg *dns.Msg, token string) *Response {
 
 	resp.Additional = make([]RR, 0, len(msg.Extra))
 	for _, rr := range msg.Extra {
-		jsonAdditional := s.marshalRR(rr, now, blacklist, 99)
+		jsonAdditional := s.marshalRR(rr, now, CustomDNSAnswer, 99, token)
 		header := rr.Header()
 		if header.Rrtype == dns.TypeOPT {
 			opt := rr.(*dns.OPT)
@@ -125,7 +128,7 @@ func (s *Server) CreateDNSPart(msg *dns.Msg, token string) *Response {
 	return resp
 }
 
-func (s *Server) marshalRR(rr dns.RR, now time.Time, blacklist string, count int) RR {
+func (s *Server) marshalRR(rr dns.RR, now time.Time, CustomDNSAnswer string, count int, token string) RR {
 	jsonRR := RR{}
 	rrHeader := rr.Header()
 	jsonRR.Name = rrHeader.Name
@@ -135,13 +138,28 @@ func (s *Server) marshalRR(rr dns.RR, now time.Time, blacklist string, count int
 	jsonRR.ExpiresStr = jsonRR.Expires.Format(time.RFC1123)
 	data := strings.SplitN(rr.String(), "\t", 5)
 	if len(data) >= 5 {
-		if blacklist == "yes" {
-			jsonRR.Data = "0.0.0.0"
-		} else {
+
+		// check if data is IP. If not record can be txt or else.
+		if s.ReturnIPAddress(data[4]) == "" {
+			// request is not an IP so return the answer in json
 			jsonRR.Data = data[4]
+		} else {
+			if CustomDNSAnswer == "blacklist" {
+				jsonRR.Data = "0.0.0.0"
+			} else {
+				jsonRR.Data = data[4]
+			}
 		}
 
 		s.DNSAnswerInsert("blabla", data[4], count)
 	}
 	return jsonRR
+}
+
+func (s *Server) ReturnIPAddress(input string) string {
+	numBlock := "(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])"
+	regexPattern := numBlock + "\\." + numBlock + "\\." + numBlock + "\\." + numBlock
+
+	regEx := regexp.MustCompile(regexPattern)
+	return regEx.FindString(input)
 }

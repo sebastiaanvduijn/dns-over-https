@@ -55,8 +55,6 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 			errtext: fmt.Sprintf("Invalid argument value: \"name\" = %q (%s)", name, err.Error()),
 		}
 	}
-	blacklist := "no"
-	token := r.FormValue("token")
 
 	rrTypeStr := r.FormValue("type")
 	rrType := uint16(1)
@@ -69,6 +67,22 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 		return &DNSRequest{
 			errcode: 400,
 			errtext: fmt.Sprintf("Invalid argument value: \"type\" = %q", rrTypeStr),
+		}
+	}
+
+	blacklist := "no"
+	token := r.FormValue("token")
+	tokendnsrequest := "na"
+
+	// create a request in DB if stats are on for token
+	if token == "" {
+	} else {
+		// token is not empty so validate and register if stats are enabled
+		tokenvalidationrequest := s.CreateNewTokenRequestID(token, name, "na")
+		if tokenvalidationrequest == "invalid_token" {
+			// token is invalid or stats are disabled
+		} else {
+			tokendnsrequest = tokenvalidationrequest
 		}
 	}
 
@@ -166,15 +180,16 @@ func (s *Server) parseRequestGoogle(ctx context.Context, w http.ResponseWriter, 
 	msg.Extra = append(msg.Extra, opt)
 
 	return &DNSRequest{
-		request:    msg,
-		token:      token,
-		blacklist:  blacklist,
-		isTailored: ednsClientSubnet == "",
+		request:         msg,
+		token:           token,
+		tokendnsrequest: tokendnsrequest,
+		blacklist:       blacklist,
+		isTailored:      ednsClientSubnet == "",
 	}
 }
 
 func (s *Server) generateResponseGoogle(ctx context.Context, w http.ResponseWriter, r *http.Request, req *DNSRequest) {
-	respJSON := s.CreateDNSPart(req.response, req.token)
+	respJSON := s.CreateDNSPart(req.response, req.token, req.tokendnsrequest)
 
 	respStr, err := json.Marshal(respJSON)
 	if err != nil {
