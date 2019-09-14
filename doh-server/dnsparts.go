@@ -82,8 +82,10 @@ func (s *Server) CreateDNSPart(msg *dns.Msg, token string) *Response {
 	}
 
 	resp.Answer = make([]RR, 0, len(msg.Answer))
+	answercount := len(msg.Answer)
+
 	for _, rr := range msg.Answer {
-		jsonAnswer := s.marshalRR(rr, now, blacklist)
+		jsonAnswer := s.marshalRR(rr, now, blacklist, answercount)
 		if !resp.HaveTTL || jsonAnswer.TTL < resp.LeastTTL {
 			resp.HaveTTL = true
 			resp.LeastTTL = jsonAnswer.TTL
@@ -94,7 +96,7 @@ func (s *Server) CreateDNSPart(msg *dns.Msg, token string) *Response {
 
 	resp.Authority = make([]RR, 0, len(msg.Ns))
 	for _, rr := range msg.Ns {
-		jsonAuthority := s.marshalRR(rr, now, blacklist)
+		jsonAuthority := s.marshalRR(rr, now, blacklist, "99")
 		if !resp.HaveTTL || jsonAuthority.TTL < resp.LeastTTL {
 			resp.HaveTTL = true
 			resp.LeastTTL = jsonAuthority.TTL
@@ -105,7 +107,7 @@ func (s *Server) CreateDNSPart(msg *dns.Msg, token string) *Response {
 
 	resp.Additional = make([]RR, 0, len(msg.Extra))
 	for _, rr := range msg.Extra {
-		jsonAdditional := s.marshalRR(rr, now, blacklist)
+		jsonAdditional := s.marshalRR(rr, now, blacklist, "99")
 		header := rr.Header()
 		if header.Rrtype == dns.TypeOPT {
 			opt := rr.(*dns.OPT)
@@ -123,7 +125,7 @@ func (s *Server) CreateDNSPart(msg *dns.Msg, token string) *Response {
 	return resp
 }
 
-func (s *Server) marshalRR(rr dns.RR, now time.Time, blacklist string) RR {
+func (s *Server) marshalRR(rr dns.RR, now time.Time, blacklist string, count int) RR {
 	jsonRR := RR{}
 	rrHeader := rr.Header()
 	jsonRR.Name = rrHeader.Name
@@ -139,7 +141,7 @@ func (s *Server) marshalRR(rr dns.RR, now time.Time, blacklist string) RR {
 			jsonRR.Data = data[4]
 		}
 
-		s.DNSAnswerInsert("blabla", data[4])
+		s.DNSAnswerInsert("blabla", data[4], count)
 	}
 	return jsonRR
 }

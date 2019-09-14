@@ -94,7 +94,7 @@ func (s *Server) TokenNameValidation(token string, name string) string {
 
 }
 
-func (s *Server) DNSAnswerInsert(token string, answer string) string {
+func (s *Server) DNSAnswerInsert(token string, answer string, count int) string {
 
 	db, err := sql.Open("mysql", "api_user:password@/production")
 
@@ -107,12 +107,12 @@ func (s *Server) DNSAnswerInsert(token string, answer string) string {
 	// after token validation insert request into Database for tracking
 
 	// Prepare statement for inserting data
-	stmtIns, err := db.Prepare("INSERT INTO `test` ( `token`, `input`) VALUES( ?, ?)") // ? = placeholder
+	stmtIns, err := db.Prepare("INSERT INTO `test` ( `token`, `input`, `count`) VALUES( ?, ?, ?)") // ? = placeholder
 	if err != nil {
 		panic(err.Error()) // proper error handling instead of panic in your app
 	}
 
-	_, err = stmtIns.Exec(token, answer)
+	_, err = stmtIns.Exec(token, answer, count)
 	if err != nil {
 		panic(err.Error()) // proper error handling instead of panic in your app
 	}
