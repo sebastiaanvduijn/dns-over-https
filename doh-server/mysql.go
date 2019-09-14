@@ -46,7 +46,6 @@ func (s *Server) CreateNewTokenRequestID(token string, name string, requesttype 
 			return uniqueID
 		}
 	}
-	defer stmtOut.Close()
 
 	return "invalid_token"
 
@@ -105,23 +104,11 @@ func (s *Server) TokenBlackListCheck(token string, name string) string {
 	default:
 		if tokenblacklistglobalcount == 1 {
 
-			_, err = stmtIns.Exec(token, name, "block")
-			if err != nil {
-				panic(err.Error()) // proper error handling instead of panic in your app
-			}
-			defer db.Close()
-
 			return "blackhole"
 		}
 	}
 
 	// execute the query with accept for the stats
-
-	_, err = stmtIns.Exec(token, name, "accept")
-	if err != nil {
-		panic(err.Error()) // proper error handling instead of panic in your app
-	}
-	defer db.Close()
 
 	return "true"
 
