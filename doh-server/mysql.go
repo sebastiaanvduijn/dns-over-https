@@ -38,7 +38,7 @@ func (s *Server) CreateNewTokenRequestID(token string, name string, requesttype 
 			// token is valid and stats are enabled, insert new entry and return request ID
 			_, err = stmtIns.Exec(token, name, requesttype, uniqueID)
 			if err != nil {
-				panic(err.Error()) // proper error handling instead of panic in your app
+				log.Fatal(err)
 			}
 			defer db.Close()
 
