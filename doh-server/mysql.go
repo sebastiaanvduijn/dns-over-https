@@ -16,13 +16,13 @@ func (s *Server) CreateNewTokenRequestID(token string, name string, requesttype 
 	db, err := sql.Open("mysql", "api_user:password@/production")
 
 	if err != nil {
-		panic(err.Error()) // Just for example purpose. You should use proper error handling instead of panic
+		log.Fatal(err)
 	}
 
 	// prepare insert query
 	stmtIns, err := db.Prepare("INSERT INTO `token_requests` ( `token`, `name`, `type`, `requestid`) VALUES( ?, ?, ?, ? )") // ? = placeholder
 	if err != nil {
-		panic(err.Error()) // proper error handling instead of panic in your app
+		log.Fatal(err)
 	}
 	defer stmtIns.Close() // Close the statement when we leave main() / the program terminates
 
@@ -55,7 +55,7 @@ func (s *Server) TokenBlackListCheck(token string, name string) string {
 	db, err := sql.Open("mysql", "api_user:password@/production")
 
 	if err != nil {
-		panic(err.Error()) // Just for example purpose. You should use proper error handling instead of panic
+		log.Fatal(err)
 	}
 
 	var tokenvalidationcount int
@@ -118,7 +118,7 @@ func (s *Server) DNSAnswerInsert(tokendnsrequestid string, answer string, count 
 	db, err := sql.Open("mysql", "api_user:password@/production")
 
 	if err != nil {
-		panic(err.Error()) // Just for example purpose. You should use proper error handling instead of panic
+		log.Fatal(err)
 	}
 
 	DNSAction := ""
@@ -137,12 +137,12 @@ func (s *Server) DNSAnswerInsert(tokendnsrequestid string, answer string, count 
 	// Prepare statement for inserting data
 	stmtIns, err := db.Prepare("insert into `token_answer` ( `answer`, `tokenrequestid`, `action`) values ( ?, ?, ?)") // ? = placeholder
 	if err != nil {
-		panic(err.Error()) // proper error handling instead of panic in your app
+		log.Fatal(err)
 	}
 
 	_, err = stmtIns.Exec(answer, tokendnsrequestid, DNSAction)
 	if err != nil {
-		panic(err.Error()) // proper error handling instead of panic in your app
+		log.Fatal(err)
 	}
 
 	defer stmtIns.Close() // Close the statement when we leave main() / the program terminates
